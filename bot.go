@@ -31,8 +31,7 @@ func runBot(ctx context.Context, app *App) error {
 	if err != nil {
 		return err
 	}
-	// Only interaction events are needed; DM 2FA replies come over REST, so the
-	// privileged message-content intent isn't required.
+	// Only interaction events are needed (DMs go out over REST), so no privileged intents.
 	s.Identify.Intents = discordgo.IntentsGuilds
 
 	bot := &bot{app: app, session: s}
@@ -46,7 +45,7 @@ func runBot(ctx context.Context, app *App) error {
 	if err := bot.registerCommands(); err != nil {
 		return fmt.Errorf("registering commands: %w", err)
 	}
-	// Presence: "Watching assignments".
+	// TODO: presence name is hardcoded, should come from config
 	if err := s.UpdateWatchStatus(0, "assignments"); err != nil {
 		log.Printf("setting presence: %v", err)
 	}

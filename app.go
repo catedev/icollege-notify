@@ -69,7 +69,7 @@ func (a *App) obtain(ctx context.Context) *Scrape {
 func (a *App) obtainWebAssign() *Scrape {
 	sc, err := LoadScrape(a.cfg.AssignmentsPath)
 	if err != nil {
-		log.Printf("%v", err)
+		log.Print(err)
 		msg := "could not read assignments.json: " + err.Error()
 		return &Scrape{Error: &msg}
 	}

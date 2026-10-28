@@ -200,15 +200,19 @@ func (b *Browser) navigate(url string) error {
 	ctx, cancel := context.WithTimeout(b.ctx, 45*time.Second)
 	defer cancel()
 	err := chromedp.Run(ctx, chromedp.Navigate(url))
-	if err != nil && (strings.Contains(err.Error(), "ERR_ABORTED") || strings.Contains(err.Error(), "net::")) {
+	// TODO: "net::" also swallows real failures (DNS, offline); they only surface later
+	// as the WaitVisible timeout in Login. Narrow this to ERR_ABORTED if that's enough.
+	if err != nil && strings.Contains(err.Error(), "net::") {
 		return nil
 	}
 	return err
 }
 
+const whoamiPath = "/d2l/api/lp/1.6/users/whoami"
+
 // loggedIn reports whether the profile currently has a usable D2L session.
 func (b *Browser) loggedIn(cfg *Config) bool {
-	body, err := b.fetchJSON(cfg.D2LBase + "/d2l/api/lp/1.6/users/whoami")
+	body, err := b.fetchJSON(cfg.D2LBase + whoamiPath)
 	if err != nil {
 		log.Printf("session check failed: %v", err)
 		return false
@@ -377,26 +381,21 @@ func (b *Browser) completeMFA(ctx context.Context, cfg *Config, p Prompter) erro
 
 	var code string
 	_ = b.run(10*time.Second, chromedp.Evaluate(duoCodeJS, &code))
+	e := Embed{
+		Author:      &EmbedAuthor{Name: "iCollege sign-in"},
+		Title:       "🔐 Approve in Duo Mobile",
+		Description: "This login needs two-factor approval. Open **Duo Mobile** and approve the request (or enter the code it shows).",
+		Color:       colorBlue,
+		Footer:      &EmbedFooter{Text: "This device will be remembered, so you won't be asked every time."},
+	}
 	if code != "" {
-		_ = p.Tell(Embed{
-			Author:      &EmbedAuthor{Name: "iCollege sign-in"},
-			Title:       "🔐 Approve in Duo Mobile",
-			Description: "This login needs two-factor approval. Open **Duo Mobile** and enter the code below to approve.",
-			Color:       colorBlue,
-			Fields:      []EmbedField{{Name: "Enter this code in Duo Mobile", Value: "**" + code + "**"}},
-			Footer:      &EmbedFooter{Text: "This device will be remembered, so you won't be asked every time."},
-		})
+		e.Description = "This login needs two-factor approval. Open **Duo Mobile** and enter the code below to approve."
+		e.Fields = []EmbedField{{Name: "Enter this code in Duo Mobile", Value: "**" + code + "**"}}
 		log.Printf("duo verification code: %s (sent via DM; enter it in Duo Mobile)", code)
 	} else {
-		_ = p.Tell(Embed{
-			Author:      &EmbedAuthor{Name: "iCollege sign-in"},
-			Title:       "🔐 Approve in Duo Mobile",
-			Description: "This login needs two-factor approval. Open **Duo Mobile** and approve the request (or enter the code it shows).",
-			Color:       colorBlue,
-			Footer:      &EmbedFooter{Text: "This device will be remembered, so you won't be asked every time."},
-		})
 		log.Printf("duo code not readable from page; asked user to approve in Duo Mobile")
 	}
+	_ = p.Tell(e)
 
 	// Wait (bounded) for the user to approve in Duo Mobile; success = redirect onward.
 	waitCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
@@ -448,7 +447,7 @@ func (b *Browser) waitRedirectOffAuth(ctx context.Context) bool {
 // notifier calls this every run, so frequent polling keeps the session from
 // expiring on inactivity between genuine fetches.
 func (b *Browser) KeepAlive(cfg *Config) {
-	if _, err := b.fetchJSON(cfg.D2LBase + "/d2l/api/lp/1.6/users/whoami"); err != nil {
+	if _, err := b.fetchJSON(cfg.D2LBase + whoamiPath); err != nil {
 		log.Printf("keep-alive ping failed: %v", err)
 	}
 }

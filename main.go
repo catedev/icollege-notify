@@ -1,7 +1,7 @@
 // Command notifier reminds you of upcoming WebAssign assignments over Discord DMs.
 //
-// Two sources: iCollege/D2L (USE_ICOLLEGE=true, headless Chrome login) or a
-// WebAssign page scrape written to assignments.json by Claude in Chrome.
+// Sources (config.yaml "source"): icollege (iCollege/D2L via headless Chrome login),
+// webassign (a page scrape written to assignments.json by Claude in Chrome), or both.
 //
 // Usage:
 //
@@ -11,7 +11,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -50,6 +49,6 @@ func main() {
 			log.Fatal(err)
 		}
 	default:
-		log.Fatal(fmt.Errorf("unknown command %q (use \"run\" or \"bot\")", cmd))
+		log.Fatalf("unknown command %q (use \"run\" or \"bot\")", cmd)
 	}
 }

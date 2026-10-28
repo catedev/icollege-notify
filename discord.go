@@ -57,14 +57,6 @@ type DM struct {
 	channelID string
 }
 
-type message struct {
-	ID      string `json:"id"`
-	Content string `json:"content"`
-	Author  struct {
-		ID string `json:"id"`
-	} `json:"author"`
-}
-
 func (d *DM) channel() (string, error) {
 	if d.channelID == "" {
 		var ch struct {
@@ -85,8 +77,7 @@ func (d *DM) Send(embeds []Embed) error {
 		return err
 	}
 	msg := map[string]any{"embeds": embeds, "allowed_mentions": map[string]any{"parse": []string{}}}
-	var m message
-	if err := d.call(http.MethodPost, "/channels/"+ch+"/messages", msg, &m); err != nil {
+	if err := d.call(http.MethodPost, "/channels/"+ch+"/messages", msg, nil); err != nil {
 		return fmt.Errorf("sending DM: %w", err)
 	}
 	return nil

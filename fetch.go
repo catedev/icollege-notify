@@ -11,15 +11,15 @@ import (
 // FetchICollege signs in if needed, then reads the course's due items and gradebook
 // and returns a Scrape in the same shape the page scraper produced.
 func FetchICollege(ctx context.Context, b *Browser, cfg *Config, p Prompter) (*Scrape, error) {
-	if err := b.Login(ctx, cfg, p); err != nil {
-		if err == errBadPassword {
-			s := "bad_credentials"
-			return &Scrape{ScrapedAt: time.Now(), Error: &s}, nil
-		}
-		if err == errMFATimeout {
-			s := "login_required"
-			return &Scrape{ScrapedAt: time.Now(), Error: &s}, nil
-		}
+	switch err := b.Login(ctx, cfg, p); err {
+	case nil:
+	case errBadPassword:
+		s := "bad_credentials"
+		return &Scrape{ScrapedAt: time.Now(), Error: &s}, nil
+	case errMFATimeout:
+		s := "login_required"
+		return &Scrape{ScrapedAt: time.Now(), Error: &s}, nil
+	default:
 		return nil, err
 	}
 

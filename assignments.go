@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Scrape mirrors the assignments.json contract in HANDOFF-webassign-discord.md.
+// Scrape is the assignments.json shape (written per SCRAPE_PROMPT.md, or built from iCollege).
 type Scrape struct {
 	ScrapedAt   time.Time    `json:"scraped_at"`
 	Course      string       `json:"course"`

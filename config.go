@@ -57,7 +57,7 @@ type yamlConfig struct {
 		GuildID  string `yaml:"guild_id"`
 	} `yaml:"discord"`
 
-	// Source selects where assignments come from: "icollege" or "webassign".
+	// Source selects where assignments come from: "icollege", "webassign", or "both".
 	Source string `yaml:"source"`
 
 	ICollege struct {

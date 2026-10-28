@@ -69,11 +69,12 @@ func ConvertICollege(due []d2lDueItem, objects []d2lGradeObject, values []d2lGra
 			continue
 		}
 		dueLocal := it.DueDate.In(loc)
+		// TODO: only "quiz" in the name counts as timed; exams/tests slip through
 		a := Assignment{
 			ID:       strconv.FormatInt(it.ItemID, 10),
 			Name:     it.ItemName,
 			Timed:    strings.Contains(strings.ToLower(it.ItemName), "quiz"),
-			DueRaw:   dueLocal.Format("Monday, January 2, 2006 at 3:04 PM MST"),
+			DueRaw:   dueLocal.Format(webassignDueLayout),
 			Due:      dueLocal.Format(time.RFC3339),
 			MaxScore: 100,
 			URL:      it.ItemURL,

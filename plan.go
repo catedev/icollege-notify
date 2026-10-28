@@ -48,6 +48,7 @@ func Plan(now time.Time, sc *Scrape, st *State, cfg *Config) []Notice {
 	var notices []Notice
 
 	// Stale data: a broken scrape must not look like "nothing due".
+	// TODO: wording assumes the WebAssign/Claude-in-Chrome source, misleading in icollege mode
 	maxAge := 3 * cfg.PollInterval
 	if age := now.Sub(sc.ScrapedAt); sc.ScrapedAt.IsZero() || age > maxAge {
 		if !st.Alerts[alertStale] {
