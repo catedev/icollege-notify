@@ -45,10 +45,6 @@ func runBot(ctx context.Context, app *App) error {
 	if err := bot.registerCommands(); err != nil {
 		return fmt.Errorf("registering commands: %w", err)
 	}
-	// TODO: presence name is hardcoded, should come from config
-	if err := s.UpdateWatchStatus(0, "assignments"); err != nil {
-		log.Printf("setting presence: %v", err)
-	}
 	log.Printf("bot online as %s; polling every %s", s.State.User.Username, app.cfg.PollInterval)
 
 	// First pass immediately, then on the ticker.
@@ -91,6 +87,20 @@ func (b *bot) safePass(ctx context.Context) {
 	if err := b.app.Pass(ctx); err != nil {
 		log.Printf("pass: %v", err)
 	}
+	b.updateStatus()
+}
+
+// updateStatus sets the presence to "Watching N assignments" from the last good fetch.
+func (b *bot) updateStatus() {
+	b.app.mu.Lock()
+	sc := b.app.last
+	b.app.mu.Unlock()
+	if sc == nil {
+		return
+	}
+	if err := b.session.UpdateWatchStatus(0, fmt.Sprintf("%d assignments", len(sc.Assignments))); err != nil {
+		log.Printf("setting presence: %v", err)
+	}
 }
 
 // onInteraction only serves the configured user; others get a polite refusal.
@@ -119,6 +129,7 @@ func (b *bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 			} else {
 				e = textEmbed("🔄 Refreshed", "Fetched the latest assignments and sent any due reminders.", colorGreen)
 			}
+			b.updateStatus()
 		case "assignments":
 			e = b.assignmentsEmbed()
 		default:

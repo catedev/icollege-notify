@@ -46,24 +46,19 @@ func (a *App) Close() {
 
 // obtain fetches the current assignment data, applying the bad-credential latch.
 func (a *App) obtain(ctx context.Context) *Scrape {
+	var sc *Scrape
 	switch a.cfg.Source {
 	case "webassign":
-		return a.obtainWebAssign()
+		sc = a.obtainWebAssign()
 	case "icollege":
-		sc := a.obtainICollege(ctx)
-		if sc.Error == nil {
-			a.last = sc
-		}
-		return sc
+		sc = a.obtainICollege(ctx)
 	default: // "both": iCollege is primary; WebAssign augments completion + due times.
-		ic := a.obtainICollege(ctx)
-		wa := a.obtainWebAssign()
-		sc := mergeScrapes(ic, wa)
-		if sc.Error == nil {
-			a.last = sc
-		}
-		return sc
+		sc = mergeScrapes(a.obtainICollege(ctx), a.obtainWebAssign())
 	}
+	if sc.Error == nil {
+		a.last = sc
+	}
+	return sc
 }
 
 func (a *App) obtainWebAssign() *Scrape {
