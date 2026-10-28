@@ -10,8 +10,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-// TestBrowserLaunchHelium checks that the project's NewBrowser launches the resolved
-// browser (Helium here) and can navigate. Skipped in -short; needs a browser + network.
+// Skipped in -short; needs a browser and network.
 func TestBrowserLaunchHelium(t *testing.T) {
 	if testing.Short() {
 		t.Skip("needs a real browser")

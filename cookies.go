@@ -12,15 +12,11 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-// Chromium does not write session cookies (those without an expiry) to disk, so
-// D2L's auth cookie is lost when the browser restarts and every run would re-do SSO.
-// SaveCookies/LoadCookies persist all cookies to a file and restore them, giving
-// session cookies a bounded lifetime so the signed-in session is reused across runs
-// until it genuinely expires server-side.
+// Chromium doesn't write session cookies to disk, so D2L's auth cookie dies with
+// the browser and every run would redo SSO. We save and restore them ourselves.
 
 const sessionCookieTTL = 12 * time.Hour
 
-// SaveCookies writes the browser's current cookies to path.
 func (b *Browser) SaveCookies(path string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -41,8 +37,7 @@ func (b *Browser) SaveCookies(path string) error {
 	return os.WriteFile(path, data, 0o600)
 }
 
-// LoadCookies restores cookies saved earlier. Session cookies (no expiry) are given
-// a bounded expiry so they survive this launch. Missing file is not an error.
+// session cookies get a bounded expiry so they survive the launch; a missing file is fine
 func (b *Browser) LoadCookies(path string) error {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {

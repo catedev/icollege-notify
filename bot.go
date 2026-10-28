@@ -14,15 +14,13 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// slashCommands are registered on startup. Guild-scoped registration (when
-// DISCORD_GUILD_ID is set) is instant; global registration can take up to an hour.
+// guild-scoped (DISCORD_GUILD_ID) registers instantly; global can take an hour
 var slashCommands = []*discordgo.ApplicationCommand{
 	{Name: "login", Description: "Sign in to iCollege again (use if a login timed out)"},
 	{Name: "refresh", Description: "Fetch assignments now and send any due reminders"},
 	{Name: "assignments", Description: "List current upcoming assignments"},
 }
 
-// runBot runs the always-on service: it polls on a ticker and handles slash commands.
 func runBot(ctx context.Context, app *App) error {
 	if app.cfg.BotToken == "" {
 		return fmt.Errorf("bot mode needs DISCORD_TOKEN")
@@ -31,7 +29,7 @@ func runBot(ctx context.Context, app *App) error {
 	if err != nil {
 		return err
 	}
-	// Only interaction events are needed (DMs go out over REST), so no privileged intents.
+	// DMs go over REST, so no privileged intents
 	s.Identify.Intents = discordgo.IntentsGuilds
 
 	bot := &bot{app: app, session: s}
@@ -47,7 +45,6 @@ func runBot(ctx context.Context, app *App) error {
 	}
 	log.Printf("bot online as %s; polling every %s", s.State.User.Username, app.cfg.PollInterval)
 
-	// First pass immediately, then on the ticker.
 	bot.safePass(ctx)
 	ticker := time.NewTicker(app.cfg.PollInterval)
 	defer ticker.Stop()
@@ -90,7 +87,6 @@ func (b *bot) safePass(ctx context.Context) {
 	b.updateStatus()
 }
 
-// updateStatus sets the presence to "Watching N assignments" from the last good fetch.
 func (b *bot) updateStatus() {
 	b.app.mu.Lock()
 	sc := b.app.last
@@ -103,7 +99,6 @@ func (b *bot) updateStatus() {
 	}
 }
 
-// onInteraction only serves the configured user; others get a polite refusal.
 func (b *bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type != discordgo.InteractionApplicationCommand {
 		return
@@ -139,7 +134,6 @@ func (b *bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 	}()
 }
 
-// assignmentsEmbed summarizes upcoming, incomplete work from the latest fetch.
 func (b *bot) assignmentsEmbed() *discordgo.MessageEmbed {
 	b.app.mu.Lock()
 	sc := b.app.last

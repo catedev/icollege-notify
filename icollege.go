@@ -39,13 +39,10 @@ type d2lGradeValue struct {
 	PointsNumerator       *float64 `json:"PointsNumerator"`
 }
 
-// d2lActivityExternal is the ActivityType D2L reports for external-tool (LTI) topics,
-// which is how WebAssign assignments are linked into the course.
+// external-tool (LTI) topic, which is how WebAssign is linked in
 const d2lActivityExternal = 7
 
-// ConvertICollege turns one course's due items + gradebook into the notifier's
-// Assignment list. Items are WebAssign work when they're external-tool topics or
-// match a tool-linked grade item by name. Scores come from synced grade values.
+// WebAssign items are external-tool topics or name-match a tool-linked grade item
 func ConvertICollege(due []d2lDueItem, objects []d2lGradeObject, values []d2lGradeValue, loc *time.Location) []Assignment {
 	objByName := map[string]d2lGradeObject{}
 	for _, o := range objects {

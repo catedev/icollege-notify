@@ -36,18 +36,15 @@ type EmbedField struct {
 	Inline bool   `json:"inline,omitempty"`
 }
 
-// maxEmbedsPerMessage is Discord's limit per message.
 const maxEmbedsPerMessage = 10
 
 const discordAPI = "https://discord.com/api/v10"
 
-// ErrUnauthorized means Discord rejected the bot token (reset, revoked, or mistyped).
-// Bot tokens don't expire on their own, so this needs a human to fix.
+// bot tokens don't expire on their own, so this needs a human
 var ErrUnauthorized = errors.New("discord rejected the bot token (401)")
 
-// DM delivers messages to one user's DMs through a bot, using only the REST API
-// (no gateway connection). The bot must share a server with the user, and the
-// user must allow DMs from that server's members.
+// DM sends over REST only. The bot must share a server with the user, and the user
+// must allow DMs from that server.
 type DM struct {
 	Token   string
 	UserID  string
@@ -70,7 +67,6 @@ func (d *DM) channel() (string, error) {
 	return d.channelID, nil
 }
 
-// Send posts embeds (≤10) as one DM.
 func (d *DM) Send(embeds []Embed) error {
 	ch, err := d.channel()
 	if err != nil {
@@ -83,7 +79,7 @@ func (d *DM) Send(embeds []Embed) error {
 	return nil
 }
 
-// call sends JSON to the Discord API, retrying once on a 429.
+// retries once on 429
 func (d *DM) call(method, path string, payload, out any) error {
 	var body []byte
 	if payload != nil {

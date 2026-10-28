@@ -49,10 +49,5 @@ Only the configured `discord.dm_user_id` can use them.
 
 ## Notes
 
-- The Chrome profile keeps the session and Duo's "remember this device" cookie, so a full
-  login with 2FA is rare. When it does happen, the bot DMs you the Duo code.
-- If GSU rejects your password, the bot stops retrying until the credentials change, so it
-  won't lock your account.
-- If Discord rejects the bot token, you get a desktop notification instead of a DM.
-- Automating GSU sign-in with stored credentials may break the university's acceptable-use
-  policy. Your call.
+- The Chrome profile keeps the session and Duo's "remember this device" cookie, so a full login with 2FA is rare. When it does happen, the bot DMs you the Duo code.
+- Automating GSU sign-in with stored credentials may break the university's acceptable-use policy. You are responsible for any repercussions as a result of using this software.

@@ -48,8 +48,7 @@ type Config struct {
 	Headless         bool
 }
 
-// yamlConfig mirrors config.yaml. Pointers mark "unset" so a false in the file is
-// distinguishable from an omitted key (which takes the default).
+// pointers so an explicit false differs from an omitted key
 type yamlConfig struct {
 	Discord struct {
 		Token    string `yaml:"token"`
@@ -57,7 +56,6 @@ type yamlConfig struct {
 		GuildID  string `yaml:"guild_id"`
 	} `yaml:"discord"`
 
-	// Source selects where assignments come from: "icollege", "webassign", or "both".
 	Source string `yaml:"source"`
 
 	ICollege struct {
@@ -89,7 +87,6 @@ type yamlConfig struct {
 	DryRun    bool   `yaml:"dry_run"`
 }
 
-// DefaultConfigPath is used when CONFIG_PATH is unset.
 const DefaultConfigPath = "config.yaml"
 
 func configPath() string {
@@ -99,8 +96,6 @@ func configPath() string {
 	return DefaultConfigPath
 }
 
-// LoadConfig reads and validates the YAML config file. Secrets live in the file
-// itself (which is gitignored), so there is no env indirection.
 func LoadConfig(path string) (*Config, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -175,9 +170,7 @@ func LoadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-// ParseThresholdList parses reminder offsets like ["72h","24h","6h","1h"] (any order,
-// Go durations plus "d" for days), sorted largest first with duplicates removed.
-// An empty list falls back to the default set.
+// Go durations plus "d" for days; returns largest first, deduped, defaults if empty
 func ParseThresholdList(parts []string) ([]Threshold, error) {
 	if len(parts) == 0 {
 		parts = []string{"72h", "24h", "6h", "1h"}
@@ -209,7 +202,7 @@ func ParseThresholdList(parts []string) ([]Threshold, error) {
 	return out, nil
 }
 
-// ParseThresholds parses a comma-separated threshold string (used in tests).
+// comma-separated form, for tests
 func ParseThresholds(s string) ([]Threshold, error) {
 	return ParseThresholdList(strings.Split(s, ","))
 }

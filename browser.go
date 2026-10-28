@@ -21,8 +21,7 @@ var (
 	errMFATimeout  = errors.New("no 2FA response in time")
 )
 
-// Prompter is how the login flow reaches the (single, configured) user during 2FA —
-// one-way: it tells the user, as an embed, the Duo code to enter in Duo Mobile.
+// Prompter DMs the user the Duo code during 2FA (one-way).
 type Prompter interface {
 	Tell(e Embed) error
 }
@@ -31,8 +30,7 @@ type dmPrompter struct{ dm *DM }
 
 func (p dmPrompter) Tell(e Embed) error { return p.dm.Send([]Embed{e}) }
 
-// Browser is a headless Chrome with a persistent profile directory, so the GSU
-// session and Duo's "remember this device" cookie survive between runs.
+// persistent profile so the GSU session and Duo's remember-device cookie survive restarts
 type Browser struct {
 	alloc       context.Context
 	allocCancel context.CancelFunc
@@ -46,26 +44,20 @@ func NewBrowser(parent context.Context, cfg *Config) *Browser {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.UserDataDir(cfg.ChromeProfileDir),
 		chromedp.Flag("disable-gpu", true),
-		// Headless Chromium crashes ("context canceled") on heavier pages when the
-		// default /dev/shm is small; use /tmp instead. no-sandbox avoids crashes
-		// where the user namespace sandbox isn't available for the service user.
+		// small /dev/shm crashes headless on heavy pages; no-sandbox because the service
+		// user may not have the userns sandbox
 		chromedp.Flag("disable-dev-shm-usage", true),
 		chromedp.Flag("no-sandbox", true),
-		// Suppress the "didn't shut down correctly" restore bubble/state that a prior
-		// crash leaves in a persistent profile and that can wedge the next launch.
+		// a crashed run's restore state can wedge the next launch
 		chromedp.Flag("disable-session-crashed-bubble", true),
 		chromedp.Flag("hide-crash-restore-bubble", true),
 		chromedp.WindowSize(1280, 900),
-		// Present headless and headed identically: drop chromedp's default
-		// enable-automation switch and the AutomationControlled flag, so
-		// navigator.webdriver is undefined in both modes.
+		// hide navigator.webdriver so headless and headed look the same
 		chromedp.Flag("enable-automation", false),
 		chromedp.Flag("disable-blink-features", "AutomationControlled"),
 	)
 	if cfg.Headless {
-		// New headless mode renders like a real browser (old headless's redirect/JS
-		// quirks broke the SSO flow). The remaining tell is the "HeadlessChrome" UA
-		// token, which the IdP blocks; it's normalized to the headed UA after launch.
+		// old headless broke the SSO redirects; the HeadlessChrome UA token is stripped after launch
 		opts = append(opts, chromedp.Flag("headless", "new"))
 	} else {
 		opts = append(opts, chromedp.Flag("headless", false))
@@ -75,24 +67,18 @@ func NewBrowser(parent context.Context, cfg *Config) *Browser {
 			opts = append(opts, chromedp.CombinedOutput(w))
 		}
 	}
-	// Drive a specific Chromium-based browser (e.g. Helium) when BROWSER_PATH is set
-	// or a known binary is found; otherwise chromedp auto-detects Chrome/Chromium.
 	if path := resolveBrowserPath(cfg.BrowserPath); path != "" {
 		log.Printf("using browser: %s", path)
 		opts = append(opts, chromedp.ExecPath(path))
 	}
-	// A prior run that was killed (not shut down cleanly) leaves Singleton lock files
-	// that make Chromium abort with "Failed to create SingletonLock". Since only one
-	// notifier uses this profile at a time, clear stale locks before launching.
+	// a killed run leaves stale Singleton locks and Chromium refuses to start
 	for _, name := range []string{"SingletonLock", "SingletonCookie", "SingletonSocket"} {
 		_ = os.Remove(filepath.Join(cfg.ChromeProfileDir, name))
 	}
 
 	alloc, allocCancel := chromedp.NewExecAllocator(parent, opts...)
 	ctx, cancel := chromedp.NewContext(alloc)
-	// Start the browser bound to ctx itself. Otherwise the first Run (which boots
-	// the browser) would be a per-operation timeout context, and its cancel would
-	// tear the browser down, breaking every subsequent action with "context canceled".
+	// boot on the long-lived ctx; a timeout ctx here kills the browser on cancel
 	if err := chromedp.Run(ctx, chromedp.Navigate("about:blank")); err != nil {
 		log.Printf("starting browser: %v", err)
 	}
@@ -101,18 +87,13 @@ func NewBrowser(parent context.Context, cfg *Config) *Browser {
 	if cfg.Headless {
 		b.normalizeHeadlessUA()
 	}
-	// Restore a saved session so routine runs reuse it instead of re-doing SSO.
 	if err := b.LoadCookies(b.cookiesPath); err != nil {
 		log.Printf("restoring session cookies: %v", err)
 	}
 	return b
 }
 
-// normalizeHeadlessUA makes the headless user-agent identical to the headed one by
-// removing only the "HeadlessChrome" token from the browser's own real UA (keeping the
-// same Chrome version). The IdP blocks the "HeadlessChrome" token, so without this the
-// SSO login never renders. This derives the string at runtime rather than spoofing a
-// fixed version, so it stays correct as the browser updates.
+// the IdP blocks "HeadlessChrome" in the UA; strip just that token from the real one
 func (b *Browser) normalizeHeadlessUA() {
 	var ua string
 	if err := b.run(10*time.Second, chromedp.Evaluate(`navigator.userAgent`, &ua)); err != nil {
@@ -128,9 +109,7 @@ func (b *Browser) normalizeHeadlessUA() {
 	log.Printf("headless browser presented as headed")
 }
 
-// resolveBrowserPath picks the browser binary chromedp should launch. An explicit
-// BROWSER_PATH wins; otherwise it prefers Helium if installed, then falls back to
-// chromedp's own auto-detection (returning "").
+// BROWSER_PATH, then Helium if installed, else "" for chromedp's auto-detect
 func resolveBrowserPath(configured string) string {
 	if configured != "" {
 		return configured
@@ -148,9 +127,7 @@ func (b *Browser) Close() {
 	b.allocCancel()
 }
 
-// fetchJSON navigates to a D2L API URL (using the profile's session) and returns
-// the response body text. It waits for the body node and retries once, so a
-// page-load race can't be mistaken for a lost session (which would force re-login).
+// retries once so a page-load race isn't mistaken for a lost session
 func (b *Browser) fetchJSON(url string) (string, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -173,9 +150,7 @@ func (b *Browser) fetchJSON(url string) (string, error) {
 	return "", lastErr
 }
 
-// run executes chromedp actions on the browser's own context (b.ctx) with a timeout.
-// chromedp.Run requires a context rooted in the chromedp context, so actions must
-// never be run on a caller-supplied context such as context.Background().
+// must run on b.ctx: chromedp needs a context rooted in its own
 func (b *Browser) run(timeout time.Duration, actions ...chromedp.Action) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -184,16 +159,14 @@ func (b *Browser) run(timeout time.Duration, actions ...chromedp.Action) error {
 	return chromedp.Run(ctx, actions...)
 }
 
-// currentURL reads the current page URL without navigating (safe to poll during MFA).
+// doesn't navigate, so it's safe to poll during MFA
 func (b *Browser) currentURL() string {
 	var u string
 	_ = b.run(10*time.Second, chromedp.Location(&u))
 	return u
 }
 
-// navigate goes to url, tolerating the net::ERR_ABORTED that SSO redirect chains
-// produce: the initial document is superseded by a redirect before it finishes
-// loading, which chromedp.Navigate surfaces as an error even though the flow is fine.
+// SSO redirects abort the first document, which chromedp reports as an error
 func (b *Browser) navigate(url string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -210,7 +183,6 @@ func (b *Browser) navigate(url string) error {
 
 const whoamiPath = "/d2l/api/lp/1.6/users/whoami"
 
-// loggedIn reports whether the profile currently has a usable D2L session.
 func (b *Browser) loggedIn(cfg *Config) bool {
 	body, err := b.fetchJSON(cfg.D2LBase + whoamiPath)
 	if err != nil {
@@ -220,11 +192,10 @@ func (b *Browser) loggedIn(cfg *Config) bool {
 	return strings.Contains(body, `"Identifier"`)
 }
 
-// listInputsJS describes the form controls on the page, to diagnose selector drift.
+// for diagnosing selector drift
 const listInputsJS = `JSON.stringify(Array.from(document.querySelectorAll('input,button'))
   .map(e => ({type: e.type, id: e.id, name: e.name, placeholder: e.placeholder})).slice(0, 30))`
 
-// describePage returns the current URL, title, and a short dump of input fields.
 func (b *Browser) describePage() string {
 	var loc, title, inputs string
 	_ = b.run(10*time.Second,
@@ -235,8 +206,6 @@ func (b *Browser) describePage() string {
 	return fmt.Sprintf("url=%q title=%q inputs=%s", loc, title, inputs)
 }
 
-// Login establishes a session if one isn't already active. On an active session it
-// returns immediately (the common case, thanks to the persistent profile).
 func (b *Browser) Login(ctx context.Context, cfg *Config, p Prompter) error {
 	if b.loggedIn(cfg) {
 		return nil
@@ -248,8 +217,7 @@ func (b *Browser) Login(ctx context.Context, cfg *Config, p Prompter) error {
 		return fmt.Errorf("opening login page: %w", err)
 	}
 
-	// GSU runs oxAuth (Gluu): JSF field ids contain a colon, which is invalid in a
-	// bare #id CSS selector, so match by name attribute instead.
+	// oxAuth's JSF ids contain colons, so select by name
 	const (
 		userSel   = `input[name="loginForm:username"]`
 		passSel   = `input[name="loginForm:password"]`
@@ -270,8 +238,7 @@ func (b *Browser) Login(ctx context.Context, cfg *Config, p Prompter) error {
 		return fmt.Errorf("submitting credentials: %w", err)
 	}
 
-	// Decide the outcome: staying on the oxAuth login page means the credentials
-	// were rejected (latch against retrying); leaving it means MFA or success.
+	// still on the login page = bad creds (latch so we don't retry); otherwise MFA or done
 	if b.stuckOnLogin() {
 		log.Printf("still on login page after submit: %s", b.describePage())
 		return errBadPassword
@@ -286,8 +253,6 @@ func (b *Browser) Login(ctx context.Context, cfg *Config, p Prompter) error {
 	return nil
 }
 
-// stuckOnLogin reports whether, several seconds after submitting, the browser is
-// still on the oxAuth login page — the signature of rejected credentials.
 func (b *Browser) stuckOnLogin() bool {
 	deadline := time.Now().Add(15 * time.Second)
 	for time.Now().Before(deadline) {
@@ -303,8 +268,6 @@ func (b *Browser) stuckOnLogin() bool {
 	return true
 }
 
-// trustDeviceJS ticks any "remember this device" / "trust this browser" checkbox Duo
-// presents, so future runs skip the 2FA prompt. It's a no-op if none is shown.
 const trustDeviceJS = `
 (() => {
   const want = /remember|trust/i;
@@ -317,10 +280,7 @@ const trustDeviceJS = `
 })()
 `
 
-// duoCodeJS reads the verification code Duo shows for "verified push" — the number
-// the user types into Duo Mobile to approve. Duo's Universal Prompt usually renders
-// it in the top document (GSU's oxAuth hosts it same-origin); if it's in a
-// cross-origin iframe this returns "" and we fall back to a plain "approve" message.
+// Duo's verified-push number; "" if it's in a cross-origin iframe
 const duoCodeJS = `
 (() => {
   const grab = doc => {
@@ -338,13 +298,9 @@ const duoCodeJS = `
 })()
 `
 
-// duoTextJS dumps a little page text to the log, to diagnose the Duo prompt shape.
 const duoTextJS = `((document.body&&document.body.innerText)||'').replace(/\s+/g,' ').slice(0,300)`
 
-// trustButtonJS clicks the affirmative button on Duo's post-approval "Trust this
-// browser?" / "Remember this device" screen (so the session is remembered and the
-// flow proceeds), while avoiding the negative "No, other people use this device"
-// choice. Returns the clicked label, or "" if no such button is present.
+// clicks yes on Duo's "Trust this browser?" screen, avoiding "No, other people use this device"
 const trustButtonJS = `
 (() => {
   const want = /trust|remember/i, skip = /no[,.]|other people|don'?t|not my|someone else/i;
@@ -361,11 +317,7 @@ const trustButtonJS = `
 })()
 `
 
-// completeMFA handles Duo "verified push": the page shows a code that the user types
-// into Duo Mobile to approve. The bot reads that code and DMs it (so a headless/server
-// run works without a screen), ticks "trust this browser", then waits for the Duo page
-// to redirect onward — the sign the user approved. The DM is informational; approval
-// happens in Duo Mobile, not here.
+// the code is DMed so a headless run works; approval itself happens in Duo Mobile
 func (b *Browser) completeMFA(ctx context.Context, cfg *Config, p Prompter) error {
 	if b.redirectedOffAuth(5 * time.Second) {
 		return nil // "remember this device" cookie carried us straight through
@@ -406,9 +358,7 @@ func (b *Browser) completeMFA(ctx context.Context, cfg *Config, p Prompter) erro
 	return errMFATimeout
 }
 
-// redirectedOffAuth reports whether, within the window, the page has left the
-// oxAuth/Duo flow (the sign of MFA completing). It only reads the URL, never
-// navigates, so it won't disturb a Duo prompt the user is interacting with.
+// only reads the URL so it won't disturb the Duo prompt
 func (b *Browser) redirectedOffAuth(within time.Duration) bool {
 	ctx, cancel := context.WithTimeout(b.ctx, within)
 	defer cancel()
@@ -417,8 +367,7 @@ func (b *Browser) redirectedOffAuth(within time.Duration) bool {
 
 func (b *Browser) waitRedirectOffAuth(ctx context.Context) bool {
 	for i := 0; ; i++ {
-		// After the user approves, Duo shows a "Trust this browser?" screen that must
-		// be clicked through; do it here so the flow doesn't stall on it.
+		// Duo's post-approval "Trust this browser?" screen stalls the flow until clicked
 		var clicked string
 		_ = b.run(10*time.Second, chromedp.Evaluate(trustButtonJS, &clicked))
 		if clicked != "" {
@@ -443,9 +392,7 @@ func (b *Browser) waitRedirectOffAuth(ctx context.Context) bool {
 	}
 }
 
-// KeepAlive touches an authenticated endpoint to refresh the D2L idle timer. The
-// notifier calls this every run, so frequent polling keeps the session from
-// expiring on inactivity between genuine fetches.
+// KeepAlive refreshes the D2L idle timer between fetches.
 func (b *Browser) KeepAlive(cfg *Config) {
 	if _, err := b.fetchJSON(cfg.D2LBase + whoamiPath); err != nil {
 		log.Printf("keep-alive ping failed: %v", err)

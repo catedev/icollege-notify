@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-// FetchICollege signs in if needed, then reads the course's due items and gradebook
-// and returns a Scrape in the same shape the page scraper produced.
 func FetchICollege(ctx context.Context, b *Browser, cfg *Config, p Prompter) (*Scrape, error) {
 	switch err := b.Login(ctx, cfg, p); err {
 	case nil:

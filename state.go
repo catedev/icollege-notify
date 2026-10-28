@@ -11,9 +11,8 @@ type State struct {
 	Initialized bool              `json:"initialized"`
 	Assignments map[string]*Entry `json:"assignments"`
 	Alerts      map[string]bool   `json:"alerts"` // one-shot warnings currently raised
-	// BadCredHash is the fingerprint of credentials GSU last rejected. While it
-	// matches the current .env, login is skipped so repeated bad attempts can't
-	// lock the account. Cleared when the credentials change.
+	// fingerprint of the creds GSU last rejected; login is skipped until they change
+	// so repeated bad attempts can't lock the account
 	BadCredHash string `json:"bad_cred_hash,omitempty"`
 }
 

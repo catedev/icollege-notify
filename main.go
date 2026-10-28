@@ -1,12 +1,9 @@
-// Command icollege-notify reminds you of upcoming iCollege/WebAssign assignments over Discord DMs.
-//
-// Sources (config.yaml "source"): icollege (iCollege/D2L via headless Chrome login),
-// webassign (a page scrape written to assignments.json by Claude in Chrome), or both.
+// Command icollege-notify sends Discord DM reminders for upcoming iCollege/WebAssign assignments.
 //
 // Usage:
 //
-//	icollege-notify        run one pass and exit (cron/timer friendly)
-//	icollege-notify bot    run as an always-on service with Discord slash commands
+//	icollege-notify        one pass and exit
+//	icollege-notify bot    always-on, with slash commands
 package main
 
 import (

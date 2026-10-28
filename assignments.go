@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Scrape is the assignments.json shape (written per SCRAPE_PROMPT.md, or built from iCollege).
+// Scrape is the assignments.json shape (see SCRAPE_PROMPT.md).
 type Scrape struct {
 	ScrapedAt   time.Time    `json:"scraped_at"`
 	Course      string       `json:"course"`
@@ -31,21 +31,18 @@ type Assignment struct {
 const webassignDueLayout = "Monday, January 2, 2006 at 3:04 PM MST"
 
 // ParseDueRaw parses WebAssign's "Monday, November 2, 2026 at 11:59 PM EST" in loc.
-// The zone abbreviation is matched against loc, so EDT/EST resolve to -04:00/-05:00.
 func ParseDueRaw(s string, loc *time.Location) (time.Time, error) {
 	t, err := time.ParseInLocation(webassignDueLayout, strings.Join(strings.Fields(s), " "), loc)
 	if err != nil {
 		return time.Time{}, err
 	}
-	// Go accepts unknown abbreviations with a zero offset; reject that instead of
-	// silently treating the time as UTC.
+	// Go gives unknown zone abbrevs a zero offset; don't silently treat that as UTC
 	if _, off := t.Zone(); off == 0 && loc != time.UTC {
 		return time.Time{}, fmt.Errorf("unrecognized time zone in %q", s)
 	}
 	return t, nil
 }
 
-// DueTime prefers the scraper's normalized "due" and falls back to parsing due_raw.
 func (a Assignment) DueTime(loc *time.Location) (time.Time, error) {
 	if a.Due != "" {
 		if t, err := time.Parse(time.RFC3339, a.Due); err == nil {
@@ -58,11 +55,7 @@ func (a Assignment) DueTime(loc *time.Location) (time.Time, error) {
 	return ParseDueRaw(a.DueRaw, loc)
 }
 
-// Completed reports whether an assignment is done and shouldn't be reminded.
-// Full marks always count. A timed assignment (quiz/exam) is one-shot: once it has
-// any score it's been taken and can't be improved, so a partial score also counts.
-// Non-timed homework with a partial score is NOT done — you can keep improving it
-// before the deadline, so it still gets reminders.
+// timed work (quizzes) is one-shot, so any score counts; homework needs full marks
 func (a Assignment) Completed() bool {
 	if a.Score == nil || a.MaxScore <= 0 {
 		return false
@@ -70,11 +63,7 @@ func (a Assignment) Completed() bool {
 	return *a.Score >= a.MaxScore || a.Timed
 }
 
-// MergeAssignments combines two assignment lists, matching by normalized name.
-// base is the primary source (iCollege, the superset); extra (WebAssign) contributes
-// per-student due times and possibly fresher completion. An assignment counts as done
-// if EITHER source shows it done, so work submitted on either platform is not
-// re-reminded. Completion is monotonic, so a stale extra list can't un-complete work.
+// done on either side wins, so a stale WebAssign list can't un-complete work
 func MergeAssignments(base, extra []Assignment) []Assignment {
 	out := append([]Assignment(nil), base...)
 	idx := make(map[string]int, len(out))
@@ -92,8 +81,7 @@ func MergeAssignments(base, extra []Assignment) []Assignment {
 	return out
 }
 
-// mergeOne combines a base (iCollege) and extra (WebAssign) entry for the same
-// assignment. Done-on-either wins; WebAssign's per-student due time is preferred.
+// WebAssign's per-student due time wins
 func mergeOne(base, extra Assignment) Assignment {
 	m := base
 	if extra.Due != "" || extra.DueRaw != "" {

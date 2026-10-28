@@ -26,9 +26,7 @@ type Notice struct {
 	Apply func(*State)
 }
 
-// PickThreshold returns the smallest threshold that remaining has crossed, plus
-// every crossed threshold (which should all be marked sent together).
-// thresholds must be sorted largest first.
+// thresholds must be largest first; returns the smallest crossed one plus all crossed labels
 func PickThreshold(remaining time.Duration, thresholds []Threshold) (Threshold, []string, bool) {
 	var crossed []string
 	var pick Threshold
@@ -41,9 +39,7 @@ func PickThreshold(remaining time.Duration, thresholds []Threshold) (Threshold, 
 	return pick, crossed, len(crossed) > 0
 }
 
-// Plan decides what to post. Silent bookkeeping (first-run recording, pruning,
-// clearing resolved alerts) is applied to st directly; anything that needs a
-// Discord message is returned as a Notice whose Apply runs after delivery.
+// bookkeeping is applied to st directly; anything needing a message becomes a Notice applied after delivery
 func Plan(now time.Time, sc *Scrape, st *State, cfg *Config) []Notice {
 	var notices []Notice
 
@@ -119,7 +115,6 @@ func Plan(now time.Time, sc *Scrape, st *State, cfg *Config) []Notice {
 
 		done := a.Completed() && cfg.SkipCompleted
 
-		// New-assignment announcements.
 		if !e.Announced {
 			if firstRun || !cfg.NotifyNew || done || !due.After(now) {
 				e.Announced = true
@@ -131,7 +126,6 @@ func Plan(now time.Time, sc *Scrape, st *State, cfg *Config) []Notice {
 			}
 		}
 
-		// Due-date reminders.
 		if done || !due.After(now) {
 			continue
 		}
