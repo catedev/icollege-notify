@@ -1,0 +1,106 @@
+{
+  "scraped_at": "2026-10-27T14:05:00-04:00",
+  "course": "Math 101, Fall 2026",
+  "error": null,
+  "assignments": [
+    {
+      "id": "10000770",
+      "name": "5b Homework: Applications of Functions",
+      "category": "Homework",
+      "timed": false,
+      "due_raw": "Tuesday, October 27, 2026 at 11:59 PM EDT",
+      "due": "",
+      "score": 80,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000770"
+    },
+    {
+      "id": "10000771",
+      "name": "Chapter 5 Quiz (5.1 5.2 5a & 5b)",
+      "category": "Quiz",
+      "timed": true,
+      "due_raw": "Tuesday, October 27, 2026 at 11:59 PM EDT",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000771"
+    },
+    {
+      "id": "10000766",
+      "name": "Pre-Chapter 5: Linear & Nonlinear Functions Homewk",
+      "category": "Lab Homework",
+      "timed": false,
+      "due_raw": "Tuesday, October 27, 2026 at 11:59 PM EDT",
+      "due": "",
+      "score": 100,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000766"
+    },
+    {
+      "id": "10000767",
+      "name": "Pre-Chapter 5: Linear & Nonlinear Functions Quiz",
+      "category": "Lab Quiz",
+      "timed": true,
+      "due_raw": "Tuesday, October 27, 2026 at 11:59 PM EDT",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000767"
+    },
+    {
+      "id": "10000772",
+      "name": "Pre-Chapter 7: Probability Homework",
+      "category": "Lab Homework",
+      "timed": false,
+      "due_raw": "Friday, October 30, 2026 at 11:59 PM EDT",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000772"
+    },
+    {
+      "id": "10000773",
+      "name": "Pre-Chapter 7: Probability Quiz",
+      "category": "Lab Quiz",
+      "timed": true,
+      "due_raw": "Friday, October 30, 2026 at 11:59 PM EDT",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000773"
+    },
+    {
+      "id": "10000774",
+      "name": "7.3 Homework: Probability and Odds",
+      "category": "Homework",
+      "timed": false,
+      "due_raw": "Monday, November 2, 2026 at 11:59 PM EST",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000774"
+    },
+    {
+      "id": "10000775",
+      "name": "7.4 Homework: Addition and Complement Rules",
+      "category": "Homework",
+      "timed": false,
+      "due_raw": "Monday, November 9, 2026 at 11:59 PM EST",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000775"
+    },
+    {
+      "id": "10000776",
+      "name": "Chapter 7 Quiz (7.3 & 7.4)",
+      "category": "Quiz",
+      "timed": true,
+      "due_raw": "Wednesday, November 11, 2026 at 11:59 PM EST",
+      "due": "",
+      "score": null,
+      "max_score": 100,
+      "url": "https://www.webassign.net/web/Student/Assignment-Responses/last?dep=10000776"
+    }
+  ]
+}

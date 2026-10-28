@@ -1,0 +1,43 @@
+# webassign-notify configuration.
+#
+# Copy to config.yaml and fill in. config.yaml holds secrets and is gitignored.
+#   cp config.example.yaml config.yaml && chmod 600 config.yaml
+# Override the path with CONFIG_PATH=/etc/webassign-notify.yaml
+
+discord:
+  token: ""           # Bot token (Developer Portal -> Bot -> Reset Token)
+  dm_user_id: ""      # Your user ID (Developer Mode -> right-click you -> Copy User ID)
+  guild_id: ""        # Optional: a server ID for instant slash-command registration
+
+# Where assignments come from:
+#   icollege  - direct D2L API via headless browser (server-friendly)
+#   webassign - Claude-in-Chrome page scrape into assignments.json
+#   both      - iCollege as the base, merged with WebAssign; an assignment counts
+#               as done if submitted on EITHER platform. WebAssign data comes from
+#               assignments.json, so run the Chrome scrape (run.sh) to refresh it.
+source: both
+
+icollege:
+  gsu_username: ""
+  gsu_password: ""
+  course_org_unit: "1234567"    # from D2L myenrollments
+  course_name: "Math 101, Fall 2026"
+  chrome_profile_dir: chrome-profile   # persists session + Duo "trusted device" cookie
+  headless: false                       # false to watch/complete the first Duo login
+  browser_path: ""                      # auto-detects Helium (/usr/bin/helium) if blank
+  # d2l_base: https://gastate.view.usg.edu
+  # idp_entity_id: https://idp.gsu.edu/idp/shibboleth
+
+webassign:
+  assignments_path: assignments.json
+
+reminders:
+  remind_before: ["72h", "24h", "6h", "1h"]
+  poll_interval: 60m
+  timezone: America/New_York
+  skip_completed: true
+  notify_new_assignments: true
+  prune_after: 168h
+
+state_path: state.json
+dry_run: false

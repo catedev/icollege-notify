@@ -1,0 +1,14 @@
+[Unit]
+Description=WebAssign/iCollege Discord reminder bot (always-on)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/GolandProjects/webassign-notify
+ExecStart=%h/GolandProjects/webassign-notify/notifier bot
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target

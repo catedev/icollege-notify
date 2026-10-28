@@ -1,0 +1,11 @@
+config.yaml
+state.json
+/assignments.json
+/assignments.json.tmp
+/notifier
+/webassign-notify
+chrome-profile/
+chrome-profile.bak/
+.env
+/deploy/
+.idea/
