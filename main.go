@@ -1,12 +1,12 @@
-// Command notifier reminds you of upcoming WebAssign assignments over Discord DMs.
+// Command icollege-notify reminds you of upcoming iCollege/WebAssign assignments over Discord DMs.
 //
 // Sources (config.yaml "source"): icollege (iCollege/D2L via headless Chrome login),
 // webassign (a page scrape written to assignments.json by Claude in Chrome), or both.
 //
 // Usage:
 //
-//	notifier        run one pass and exit (cron/timer friendly)
-//	notifier bot    run as an always-on service with Discord slash commands
+//	icollege-notify        run one pass and exit (cron/timer friendly)
+//	icollege-notify bot    run as an always-on service with Discord slash commands
 package main
 
 import (
@@ -20,7 +20,7 @@ import (
 
 func main() {
 	log.SetFlags(0)
-	log.SetPrefix("notifier: ")
+	log.SetPrefix("icollege-notify: ")
 
 	cmd := ""
 	if len(os.Args) > 1 {

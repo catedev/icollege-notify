@@ -5,8 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/GolandProjects/webassign-notify
-ExecStart=%h/GolandProjects/webassign-notify/notifier bot
+WorkingDirectory=%h/GolandProjects/icollege-notify
+ExecStart=%h/GolandProjects/icollege-notify/icollege-notify bot
 Restart=on-failure
 RestartSec=30
 

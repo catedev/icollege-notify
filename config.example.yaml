@@ -1,8 +1,8 @@
-# webassign-notify configuration.
+# icollege-notify configuration.
 #
 # Copy to config.yaml and fill in. config.yaml holds secrets and is gitignored.
 #   cp config.example.yaml config.yaml && chmod 600 config.yaml
-# Override the path with CONFIG_PATH=/etc/webassign-notify.yaml
+# Override the path with CONFIG_PATH=/etc/icollege-notify.yaml
 
 discord:
   token: ""           # Bot token (Developer Portal -> Bot -> Reset Token)

@@ -25,19 +25,19 @@ Set `source` in `config.yaml`:
    people it shares a server with.
 2. `cp config.example.yaml config.yaml && chmod 600 config.yaml` and fill it in. It holds
    your secrets and is gitignored.
-3. `go build -o notifier .`
+3. `go build .`
 4. Run it as a user service:
    ```
-   cp systemd/webassign-notify.service ~/.config/systemd/user/
-   systemctl --user enable --now webassign-notify.service
+   cp systemd/icollege-notify.service ~/.config/systemd/user/
+   systemctl --user enable --now icollege-notify.service
    ```
 
-`./notifier` does one pass and exits. `./notifier bot` stays up, polls, and handles slash
-commands.
+`./icollege-notify` does one pass and exits. `./icollege-notify bot` stays up, polls,
+and handles slash commands.
 
 To try it without Discord, set `source: webassign`,
 `webassign.assignments_path: testdata/assignments.json` and `dry_run: true`, then run
-`./notifier`.
+`./icollege-notify`.
 
 ## Commands
 

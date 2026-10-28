@@ -103,7 +103,7 @@ func (d *DM) call(method, path string, payload, out any) error {
 		}
 		req.Header.Set("Authorization", "Bot "+d.Token)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", "DiscordBot (webassign-notify, 1.0)")
+		req.Header.Set("User-Agent", "DiscordBot (icollege-notify, 1.0)")
 		resp, err := d.Client.Do(req)
 		if err != nil {
 			return err

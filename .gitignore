@@ -2,8 +2,7 @@ config.yaml
 state.json
 /assignments.json
 /assignments.json.tmp
-/notifier
-/webassign-notify
+/icollege-notify
 chrome-profile/
 chrome-profile.bak/
 .env

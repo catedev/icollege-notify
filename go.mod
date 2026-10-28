@@ -1,4 +1,4 @@
-module webassign-notify
+module icollege-notify
 
 go 1.26.8
 

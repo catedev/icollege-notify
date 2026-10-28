@@ -208,7 +208,7 @@ func handleAuthFailure(st *State, sendErr error, sc *Scrape) {
 			if sc.Error != nil && *sc.Error == "login_required" {
 				msg += " Also: iCollege needs a fresh sign-in (/login)."
 			}
-			desktopNotify("WebAssign notifier", msg)
+			desktopNotify("icollege-notify", msg)
 			st.Alerts[alertDiscordAuth] = true
 		}
 	case sendErr == nil:
